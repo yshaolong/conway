@@ -10,6 +10,7 @@ Any dead cell with exactly three live neighbours becomes a live cell, as if by r
 #include <string.h>
 #include <chrono>
 #include <thread>
+#include <assert.h>
 
 
 /* PLAN
@@ -35,7 +36,6 @@ enum CellState { CellState_Dead, CellState_Alive };
 
 
 int number_of_alive_neighbours(
-	CellState location_check,
 	CellState location_one, CellState location_two, CellState location_three, CellState location_four,
 	CellState location_five, CellState location_six, CellState location_seven, CellState location_eight
 ) {
@@ -65,15 +65,15 @@ int number_of_alive_neighbours(
 		neighbour_alive_counter += 1;
 	}
 	return neighbour_alive_counter;
-	return neighbour_alive_counter;
 }
 
 CellState location_state(CellState location_check, int neighbour_alive_counter) {
 	//determining state of the location
-	if ((location_check == CellState_Alive && neighbour_alive_counter > 2) || (location_check == CellState_Alive && neighbour_alive_counter < 3)) {
+	if ((location_check == CellState_Alive && neighbour_alive_counter < 2) || 
+		(location_check == CellState_Alive && neighbour_alive_counter > 3)) {
 		return CellState_Dead;
 	}
-	else if ((location_check == CellState_Alive && neighbour_alive_counter <= 2 && neighbour_alive_counter >= 3)
+	else if ((location_check == CellState_Alive && (neighbour_alive_counter >= 2 || neighbour_alive_counter <= 3))
 		|| (location_check == CellState_Dead && neighbour_alive_counter == 3)) {
 		return CellState_Alive;
 	}
@@ -81,11 +81,6 @@ CellState location_state(CellState location_check, int neighbour_alive_counter) 
 		return CellState_Dead;
 	}
 }
-/*	CellState test1 = location_state(CellState_Alive, 1);
-	CellState test2 = location_state(CellState_Alive, 4);
-	CellState test3 = location_state(CellState_Alive, 3);
-	CellState test4 = location_state(CellState_Dead, 3);
-	CellState test5 = location_state(CellState_Dead, 5);*/
 
 char enum_to_char(CellState location_check) {
 	if (location_check == CellState_Alive) {
@@ -97,6 +92,15 @@ char enum_to_char(CellState location_check) {
 }
 int main()
 {
+	assert(CellState_Dead == location_state(CellState_Alive, 1));
+	assert(CellState_Dead == location_state(CellState_Alive, 4));
+	
+	assert(CellState_Alive == location_state(CellState_Dead, 3));
+	assert(CellState_Alive == location_state(CellState_Alive, 3));
+
+	assert(CellState_Dead == location_state(CellState_Dead, 5));
+	assert(CellState_Dead == location_state(CellState_Alive, 6));
+
 	printf("test\n");
 	const int grid_length = 50;
 	CellState grid[grid_length][grid_length] = {};
@@ -118,27 +122,18 @@ int main()
 		printf("Please input a y coordinate between 0 and 49 for cell placement\n");
 		scanf_s("%i", &y_coord);
 		grid[x_coord][y_coord] = CellState_Alive;
-		CellState top_neighbour = CellState_Dead;
-		CellState bottom_neighbour = CellState_Dead;
-		CellState left_neighbour = CellState_Dead;
-		CellState right_neighbour = CellState_Dead;
-
 
 		if (x_coord != 0) {
-			top_neighbour = CellState_Alive;
-			grid[x_coord - 1][y_coord] = top_neighbour;
+			grid[x_coord - 1][y_coord] = CellState_Alive;
 		}
 		if (x_coord != grid_length - 1) {
-			bottom_neighbour = CellState_Alive;
-			grid[x_coord + 1][y_coord] = bottom_neighbour;
+			grid[x_coord + 1][y_coord] = CellState_Alive;
 		}
 		if (y_coord != 0) {
-			left_neighbour = CellState_Alive;
-			grid[x_coord][y_coord - 1] = left_neighbour;
+			grid[x_coord][y_coord - 1] = CellState_Alive;
 		}
 		if (y_coord != grid_length - 1) {
-			right_neighbour = CellState_Alive;
-			grid[x_coord][y_coord + 1] = right_neighbour;
+			grid[x_coord][y_coord + 1] = CellState_Alive;
 		}
 
 		printf("input 'start' to begin simulation, else enter anything else \n");
@@ -148,52 +143,52 @@ int main()
 		}
 	}
 
-	//while (true) {
-	for (int i = 0; i < grid_length; i++) {
-		for (int j = 0; j < grid_length; j++) {
-			//printf("i %d j %d", i, j);
-			int alive_neighbour_counter = 0;
-			CellState top_neighbour = CellState_Dead;
-			CellState bottom_neighbour = CellState_Dead;
-			CellState left_neighbour = CellState_Dead;
-			CellState right_neighbour = CellState_Dead;
+	while (true) {
+		for (int i = 0; i < grid_length; i++) {
+			for (int j = 0; j < grid_length; j++) {
+				//printf("i %d j %d", i, j);
+				int	alive_neighbour_counter = 0;
+				CellState top_neighbour = CellState_Dead;
+				CellState bottom_neighbour = CellState_Dead;
+				CellState left_neighbour = CellState_Dead;
+				CellState right_neighbour = CellState_Dead;
 
-			CellState top_right_neighbour = CellState_Dead;
-			CellState top_left_neighbour = CellState_Dead;
-			CellState bottom_right_neighbour = CellState_Dead;
-			CellState bottom_left_neighbour = CellState_Dead;
+				CellState top_right_neighbour = CellState_Dead;
+				CellState top_left_neighbour = CellState_Dead;
+				CellState bottom_right_neighbour = CellState_Dead;
+				CellState bottom_left_neighbour = CellState_Dead;
 
-			if (i != 0) {
-				top_neighbour = grid[i - 1][j];
-				if (j != 0) {
-					top_left_neighbour = grid[i - 1][j - 1];
-				}
-				if (j != grid_length - 1) {
-					top_right_neighbour = grid[i - 1][j + 1];
-				}
-			}
-			if (i != grid_length - 1) {
-				bottom_neighbour = grid[i + 1][j];
-			}
-			if (j != 0) {
-				left_neighbour = grid[i][j - 1];
-			}
-			if (j != grid_length - 1) {
-				right_neighbour = grid[i][j + 1];
 				if (i != 0) {
-					bottom_left_neighbour = grid[i - 1][j + 1];
+					top_neighbour = grid[i - 1][j];
+					if (j != 0) {
+						top_left_neighbour = grid[i - 1][j - 1];
+					}
+					if (j != grid_length - 1) {
+						top_right_neighbour = grid[i - 1][j + 1];
+					}
 				}
 				if (i != grid_length - 1) {
-					bottom_right_neighbour = grid[i + 1][j + 1];
+					bottom_neighbour = grid[i + 1][j];
 				}
-			}
-			alive_neighbour_counter = number_of_alive_neighbours(
-				grid[i][j], top_neighbour, bottom_neighbour, left_neighbour, right_neighbour,
-				bottom_right_neighbour, bottom_left_neighbour, top_right_neighbour, top_left_neighbour);
+				if (j != 0) {
+					left_neighbour = grid[i][j - 1];
+					if (i != grid_length) {
+						bottom_left_neighbour = grid[i + 1][j - 1];
+					}
+				}
+				if (j != grid_length - 1) {
+					right_neighbour = grid[i][j + 1];
+					if (i != grid_length - 1) {
+						bottom_right_neighbour = grid[i + 1][j + 1];
+					}
+				}
+				alive_neighbour_counter = number_of_alive_neighbours(
+					top_neighbour, bottom_neighbour, left_neighbour, right_neighbour,
+					bottom_right_neighbour, bottom_left_neighbour, top_right_neighbour, top_left_neighbour);
 
-			cellstate[i][j] = location_state(grid[i][j], alive_neighbour_counter);
+				cellstate[i][j] = location_state(grid[i][j], alive_neighbour_counter);
+			}
 		}
-		//}
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		for (int i = 0; i < grid_length; i++) {
 			for (int j = 0; j < grid_length; j++) {
